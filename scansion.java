@@ -1,5 +1,5 @@
 /*Latin: Dactylic Hexameter Scansion Software
- * Version: 1.0
+ * Version: 2.0
  * Author: Johnny Tang
  * Date: October 1, 2013
  * Content: scansion of dactylic hexameter lines in the Aeneid
@@ -95,6 +95,9 @@ public class scansion {
 		return equal;
 	}
 
+	public static int countOccurrences(String haystack, String needle, int i){
+	    return ((i=haystack.indexOf(needle, i)) == -1)?0:1+countOccurrences(haystack, needle, i+1);}
+	
 	public static void main (String args[]) throws IOException
 	{
 		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
@@ -111,7 +114,8 @@ public class scansion {
 		String line = br.readLine();
 		System.out.println("This Line is "+line);
 		String[] vowels = {"a", "A", "e", "E", "i", "I", "o", "O", "u", "U"};
-		String[] diphthongs = {"ae", "au", "ei", "eu", "oe", "ui"};
+		String[] diphthongs = {"ae", "au", "ei", "eu", "oe"};
+		String[] vowelpair = {"ui", "oi", "uo", "ue"};
 		ArrayList<Integer> vowelPositions = new ArrayList();
 		ArrayList<int[]> vowelGroups = new ArrayList();
 		ArrayList<String> longshort = new ArrayList();
@@ -122,7 +126,7 @@ public class scansion {
 
 		//Remove Punctuation
 		line = line.replaceAll("[^ A-Za-z0-9()]", "");
-		
+
 		//U and I Checks:
 		line = line.replaceAll("iactatus", "jactatus");
 		line = line.replaceAll("uisa","visa");
@@ -288,6 +292,20 @@ public class scansion {
 		String originalLine = ""+line;
 		line = line.replaceAll("\\s","");
 		line = line.replaceAll("[^A-Za-z0-9]", "");
+		
+		//Trim and Untrim Positions Match-Up
+		//index indicates trimmed pos; value indicates untrimmed pos
+		/*int[] pairs = new int[line.length()];
+		String original = originalLine;
+		int cumulative = 0;
+		for (int i = 1; i <= line.length(); i++)
+		{
+			String letter = ""+line.charAt(i-1);
+			pairs[i-1] = original.charAt(cumulative+original.indexOf(letter));
+			original = original.substring(original.indexOf(letter)+1);
+			cumulative = pairs[i-1];
+		}*/
+		
 		System.out.println("Post-Elide: "+line);
 
 		//Determine vowel positions
@@ -306,102 +324,10 @@ public class scansion {
 		System.out.println("HUM" + vowelPositions.size());
 		for (int i = 1; i <= vowelPositions.size(); i++)
 		{
-			//prepare this vowel for adding
 			int[] thisVowel = {vowelPositions.get(i-1)};
 
-			//Exception 1: special macrons
-			int prevSpace = originalLine.substring(0,thisVowel[0]).lastIndexOf(" ")+1;
-			int nextSpace = originalLine.substring(thisVowel[0],originalLine.length()).indexOf(" ")+thisVowel[0];
-			String thisWord = "";
-			System.out.println("For Vowel at "+thisVowel[0]+", previous space = "+prevSpace+" at "+originalLine.substring(0,thisVowel[0])+", next space = "+nextSpace+" at "+originalLine.substring(thisVowel[0],originalLine.length()));
-
-			try
-			{
-				thisWord = ""+originalLine.substring(prevSpace,nextSpace);
-				thisWord = thisWord.replaceAll("[^A-Za-z0-9]", "");;
-				//System.out.println(thisWord);
-			}
-			catch (StringIndexOutOfBoundsException e)
-			{
-				thisWord = "herp";
-			}
-
-			//Exceptions
-			String[] deus = {"dei", "deo", "di", "dii", "deorum", "dis", "diis", "deis", "deos", "deum"};
-			String[] latium = {"Latio"};
-			String[] pietate = {"pietate"};
-			String[] italia = {"Italiam"};
-			String[] moenia = {"moenia"};
-			System.out.println("This word = "+thisWord);
-			if (Arrays.asList(deus).contains(thisWord))
-			{
-				System.out.println("Deus"+vowelPositions.get(i-1));
-				int[] prevVowel = {line.indexOf(thisWord)+2};
-				int[] nextVowel = {line.indexOf(thisWord)+3};
-				System.out.println(prevVowel[0]+" "+nextVowel[0]);
-				vowelGroups.add(prevVowel);
-				vowelGroups.add(nextVowel);
-				alreadyLong.add(vowelGroups.size());
-				System.out.println(vowelGroups.size());
-				System.out.println("already long: "+vowelGroups.size());
-				i++;
-			}		
-			//Exception - Latio
-			else if (Arrays.asList(latium).contains(thisWord))
-			{
-				System.out.println("Latio");
-				int[] A = {vowelPositions.get(i-1)};
-				int[] I = {vowelPositions.get(i-1)+2};
-				int[] O = {vowelPositions.get(i-1)+3};
-				vowelGroups.add(A);
-				vowelGroups.add(I);
-				vowelGroups.add(O);
-				alreadyLong.add(vowelGroups.size());
-				i = i+2;
-			}
-			//Exception - Pietate
-			else if(Arrays.asList(pietate).contains(thisWord))
-			{
-				int[] I = {vowelPositions.get(i-1)};
-				int[] E = {vowelPositions.get(i-1)+1};
-				int[] A = {vowelPositions.get(i-1)+3};
-				int[] E2 = {vowelPositions.get(i-1)+5};
-				vowelGroups.add(I);
-				vowelGroups.add(E);
-				vowelGroups.add(A);
-				vowelGroups.add(E2);
-				i=i+3;
-			}
-			//Exception - Italia
-			else if (Arrays.asList(italia).contains(thisWord))
-			{
-				int[] I = {vowelPositions.get(i-1)};
-				int[] A = {vowelPositions.get(i-1)+2};
-				int[] I2 = {vowelPositions.get(i-1)+4};
-				int[] A2 = {vowelPositions.get(i-1)+5};
-				vowelGroups.add(I);
-				vowelGroups.add(A);
-				vowelGroups.add(I2);
-				vowelGroups.add(A2);
-				alreadyLong.add(vowelGroups.size());
-				i=i+3;
-			}
-			//Exception - Moenia
-			else if (Arrays.asList(moenia).contains(thisWord))
-			{
-				System.out.println("Moenia: "+line.indexOf(thisWord));
-				//int[] OE = {line.indexOf(thisWord)+2,line.indexOf(thisWord)+3};
-				int[] I = {line.indexOf(thisWord)+5};
-				int[] A = {line.indexOf(thisWord)+6};
-				//vowelGroups.add(OE);
-				vowelGroups.add(I);
-				vowelGroups.add(A);
-				i++;
-			}
-
-
 			//Case 1: no previous adjacent vowel
-			else if ((i == 1) || (vowelPositions.get(i-1)-vowelPositions.get(i-2) != 1))
+			if ((i == 1) || (vowelPositions.get(i-1)-vowelPositions.get(i-2) != 1))
 			{
 				vowelGroups.add(thisVowel);
 			}
@@ -411,7 +337,10 @@ public class scansion {
 			{
 				//search through all int[] in vowelGroups, and find the previous vowel position in a particular int[]
 				//then check to see if that particular int[] has two elements (i.e., end of vowel-pair) or one element (not end)
+				int prevprev = vowelPositions.get(i-2);
 				int[] prev = vowelGroups.get(vowelGroups.size()-1);
+				String thisPair = ""+line.charAt(prev[0]-1)+line.charAt(thisVowel[0]-1);
+				System.out.println("This pair: "+thisPair);
 
 				//Subcase 1: previous adjacent vowel is end of a vowel-pair
 				//System.out.println(prev.length);
@@ -421,11 +350,17 @@ public class scansion {
 					vowelGroups.add(thisVowel);
 				}
 				//Subcase 2: previous adjacent vowel is not end of a vowel-pair
-				else if (prev.length == 1)
+				else if (prev.length == 1 && ( (Arrays.asList(diphthongs).contains(thisPair) || (Arrays.asList(vowelpair).contains(thisPair)))))
 				{
+					System.out.println("DAT TRUE");
 					//System.out.println("Vowel!!!");
 					int[] both = {prev[0],thisVowel[0]};
 					vowelGroups.set(vowelGroups.size()-1, both);
+				}
+				//Subcase 3: two adjacent non-pair
+				else
+				{
+					vowelGroups.add(thisVowel);
 				}
 			}
 			System.out.println(i);
@@ -472,8 +407,7 @@ public class scansion {
 				String nextTwo = originalLine.charAt(lastPosThis+1)+""+originalLine.charAt(lastPosThis+2);
 				if ((!nextTwo.equals("tr")) && (firstPosNext - lastPosThis > 2) && (originalLine.charAt(lastPosThis)!=originalLine.charAt(lastPosThis+1)))
 				{
-					System.out.println("Pairing: "+(line.charAt(lastPosThis+1))+","+line.charAt(lastPosThis+2));
-					System.out.println("2 Consonants "+j);
+					//System.out.println("2 Consonants "+j);
 					longshort.set(j-1, "ConsonantLong");
 					continue; //go to next vowel group
 				}
@@ -483,7 +417,7 @@ public class scansion {
 			int[] thisVowelGroup = vowelGroups.get(j-1);
 			if (thisVowelGroup.length == 2 && longshort.get(j-1).equals("Unknown"))
 			{
-				System.out.println(thisVowelGroup[0]);
+				//System.out.println(thisVowelGroup[0]);
 				String vowelPair = line.charAt(thisVowelGroup[0]-1)+""+line.charAt(thisVowelGroup[1]-1);
 				if (Arrays.asList(diphthongs).contains(vowelPair))
 				{
@@ -550,9 +484,9 @@ public class scansion {
 			//System.out.println("One possibility was tested!");
 			for (String s : thisTrial)
 			{
-				System.out.print(s);
+				//System.out.print(s);
 			}
-			System.out.println();
+			//System.out.println();
 
 			boolean failed = false;
 			do
