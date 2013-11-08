@@ -1,7 +1,7 @@
 /*Latin: Dactylic Hexameter Scansion Software
- * Version: 2.0
+ * Version: 3.0
  * Author: Johnny Tang
- * Date: October 1, 2013
+ * Date: November 8, 2013
  * Content: scansion of dactylic hexameter lines in the Aeneid
  * License: MIT License
  */
@@ -9,16 +9,18 @@
 import java.lang.*;
 import java.util.*;
 import java.io.*;
+
 import javax.*;
 
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
-public class scansion {
+class Lines {
 
-	static ArrayList<ArrayList<String>> scansion = new ArrayList();
+	ArrayList<ArrayList<String>> scansion = new ArrayList();
+	String LINE;
 
-	public static void bruteSearch (ArrayList<String> longshort, ArrayList<Integer> unknownsPos)
+	public void bruteSearch (ArrayList<String> longshort, ArrayList<Integer> unknownsPos)
 	{
 		//Duplicate new longshort and unknownsPos
 		ArrayList<String> thisLongShort = new ArrayList();
@@ -72,7 +74,7 @@ public class scansion {
 
 	}
 
-	public static boolean flexibleEqual (boolean[] array1, String[] array2)
+	public boolean flexibleEqual (boolean[] array1, String[] array2)
 	{
 		boolean equal = true;
 		for (int i = 0; i < array2.length; i++)
@@ -95,27 +97,15 @@ public class scansion {
 		return equal;
 	}
 
-	public static int countOccurrences(String haystack, String needle, int i){
-	    return ((i=haystack.indexOf(needle, i)) == -1)?0:1+countOccurrences(haystack, needle, i+1);}
-	
-	public static void main (String args[]) throws IOException
+	public int countOccurrences(String haystack, String needle, int i){
+		return ((i=haystack.indexOf(needle, i)) == -1)?0:1+countOccurrences(haystack, needle, i+1);}
+
+	public String[] scanLine(String line)
 	{
-		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-		System.out.println("Line: ");
-		/*ArrayList<String> input = new ArrayList();
-		ArrayList<String> output = new ArrayList();
-		String inline;
-		while (!((inline = br.readLine()).equals("Go!")))
-		{
-			input.add(inline);
-			System.out.println(input);
-		}
-		 */
-		String line = br.readLine();
 		System.out.println("This Line is "+line);
 		String[] vowels = {"a", "A", "e", "E", "i", "I", "o", "O", "u", "U"};
 		String[] diphthongs = {"ae", "au", "ei", "eu", "oe"};
-		String[] vowelpair = {"ui", "oi", "uo", "ue"};
+		String[] vowelpair = {"ui", "oi", "uo", "ue", "ua"};
 		ArrayList<Integer> vowelPositions = new ArrayList();
 		ArrayList<int[]> vowelGroups = new ArrayList();
 		ArrayList<String> longshort = new ArrayList();
@@ -124,12 +114,9 @@ public class scansion {
 		ArrayList<String> finalLongShort = new ArrayList();
 		System.out.println("Pre-Plausible: "+plausible.size());
 
-		//Remove Punctuation
 		line = line.replaceAll("[^ A-Za-z0-9()]", "");
-
-		//U and I Checks:
-		line = line.replaceAll("iactatus", "jactatus");
-		line = line.replaceAll("uisa","visa");
+		line = line.toLowerCase();
+		
 		String elided = line;
 		System.out.println("This Line is Now: "+line);
 
@@ -156,6 +143,7 @@ public class scansion {
 				boolean next3CharVowel = false;
 				if (i != 3)
 				{
+					System.out.println(i);
 					next3CharVowel = Arrays.asList(vowels).contains(""+line.charAt(i+2));
 				}
 				else
@@ -292,7 +280,7 @@ public class scansion {
 		String originalLine = ""+line;
 		line = line.replaceAll("\\s","");
 		line = line.replaceAll("[^A-Za-z0-9]", "");
-		
+
 		//Trim and Untrim Positions Match-Up
 		//index indicates trimmed pos; value indicates untrimmed pos
 		/*int[] pairs = new int[line.length()];
@@ -305,7 +293,7 @@ public class scansion {
 			original = original.substring(original.indexOf(letter)+1);
 			cumulative = pairs[i-1];
 		}*/
-		
+
 		System.out.println("Post-Elide: "+line);
 
 		//Determine vowel positions
@@ -341,7 +329,12 @@ public class scansion {
 				int[] prev = vowelGroups.get(vowelGroups.size()-1);
 				String thisPair = ""+line.charAt(prev[0]-1)+line.charAt(thisVowel[0]-1);
 				System.out.println("This pair: "+thisPair);
-
+				
+				//exceptions
+				//String[] exceptions = {"meus","neis"};
+				//String neighbor = line.charAt(thisVowel[0]-3)+thisPair+line.charAt(thisVowel[0]);
+				//System.out.println("Neighbor: "+neighbor);
+				
 				//Subcase 1: previous adjacent vowel is end of a vowel-pair
 				//System.out.println(prev.length);
 				if (prev.length == 2)
@@ -349,7 +342,13 @@ public class scansion {
 					//System.out.println("Vowel!!!");
 					vowelGroups.add(thisVowel);
 				}
-				//Subcase 2: previous adjacent vowel is not end of a vowel-pair
+				//Subcase 2: exceptions
+				//else if (Arrays.asList(exceptions).contains(neighbor))
+				//{
+				//	vowelGroups.add(thisVowel);
+				//	System.out.println("NEIS!");
+				//}
+				//Subcase 3: previous adjacent vowel is not end of a vowel-pair
 				else if (prev.length == 1 && ( (Arrays.asList(diphthongs).contains(thisPair) || (Arrays.asList(vowelpair).contains(thisPair)))))
 				{
 					System.out.println("DAT TRUE");
@@ -404,7 +403,8 @@ public class scansion {
 				int lastPosThis = vowelGroups.get(j-1)[vowelGroups.get(j-1).length-1];
 				int firstPosNext = vowelGroups.get(j)[0];
 				//Exception: tr -> may be short
-				String nextTwo = originalLine.charAt(lastPosThis+1)+""+originalLine.charAt(lastPosThis+2);
+				String nextTwo = line.charAt(lastPosThis)+""+line.charAt(lastPosThis+1);
+				System.out.println(line.charAt(lastPosThis-1)+" NEXT TWO: "+nextTwo);
 				if ((!nextTwo.equals("tr")) && (firstPosNext - lastPosThis > 2) && (originalLine.charAt(lastPosThis)!=originalLine.charAt(lastPosThis+1)))
 				{
 					//System.out.println("2 Consonants "+j);
@@ -552,48 +552,6 @@ public class scansion {
 			System.out.println(k+"th vowel group: "+finalLongShort.get(k-1));
 		}
 
-
-		//output.add(thisPossible);
-		//thisPossible = null;
-		//plausible.clear();
-		//System.out.println(alreadyLong.get(0));
-
-		//output all lines
-		/*for (int i = 1; i <= output.size(); i++)
-	{
-		System.out.println(input.get(i-1)+" SCANNED AS: \n"+output.get(i-1));
-	}*/
-		//Marking on Top
-		/*String top = "";
-		int vowelCounter = 0;
-		elided = elided.replaceAll("\\s","");
-		elided = elided.replaceAll("[^A-Za-z0-9()]", "");
-		for (int i = 1; i <= elided.length(); i++)
-		{
-			//means this is a vowel
-			if ((i < elided.length()) && (elided.charAt(i) == '(' || elided.charAt(i) == ')'))
-			{
-				top = top + " ";
-			}
-			else if ((vowelCounter != vowelGroups.size()) && (i == vowelGroups.get(vowelCounter)[0]))
-			{
-				if (finalLongShort.get(vowelCounter).equals("Long"))
-				{
-					top = top + "-";
-					vowelCounter++;
-				}
-				else
-				{
-					top = top + "u";
-					vowelCounter++;
-				}
-
-			}
-			else
-			{
-				top = top + " ";
-			}
-		}*/
 		System.out.println("****************************");
 		System.out.println("RESULTS");
 		System.out.println("****************************");
@@ -604,21 +562,98 @@ public class scansion {
 		String thisPossible = "";
 		//System.out.println(plausible.size());
 		int SIZE = plausible.size();
+		String thisWorks = "";
 		for (int k = 1; k <= 1; k++)
 		{
 			thisPossible += k+". ";
-			ArrayList<String> currentPlausible = plausible.get(0);
+			boolean noScan = false;
+			ArrayList<String> currentPlausible = new ArrayList();
+			try
+			{
+				currentPlausible = plausible.get(0);
+			}
+			catch (IndexOutOfBoundsException e)
+			{
+				currentPlausible.add("No scansion available!");
+				noScan = true;
+			}
 			for (String DS : currentPlausible)
 			{
 				thisPossible += DS+" ";
 				System.out.print(DS+" ");
+				thisWorks += DS+" ";
 			}//end of the for loop
 			System.out.println();
 			thisPossible += "\n";
 			//System.out.println("This Possible: "+thisPossible);
-			plausible.remove(plausible.size()-1);
+			if (noScan)
+			{
+				plausible.remove(plausible.size()-1);
+			}
+		}
+		System.out.println("THIS WORKS: "+thisWorks);
+		String[] returnValue = {thisWorks,elided};
+		return returnValue;
+	}
+}
+
+public class scansion {
+
+	public static void main (String args[]) throws IOException
+	{
+		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+		System.out.println("Lines: ");
+		/*ArrayList<String> input = new ArrayList();
+		ArrayList<String> output = new ArrayList();
+		String inline;
+		while (!((inline = br.readLine()).equals("Go!")))
+		{
+			input.add(inline);
+			System.out.println(input);
+		}
+		 */
+		ArrayList<String> lines = new ArrayList();
+		ArrayList<String> results = new ArrayList();
+		String nowline = null;
+		while (!(nowline = br.readLine()).equals("Go!"))
+		{
+			lines.add(nowline);
 		}
 
+		int numTotal = 0;
+		int numScanned = 0;
+		for (int g = 1; g <= lines.size(); g++)
+		{
+			Lines thisLine = new Lines();
+			try
+			{
+				String[] scanned = thisLine.scanLine(lines.get(g-1));
+				results.add(scanned[0]);
+				lines.set(g-1, scanned[1]);
+				numScanned++;
+			}
+			catch (ArrayIndexOutOfBoundsException e)
+			{
+				results.add("No scansion available!");
+			}
+			numTotal++;
+		}
 
+		System.out.println("****************************");
+		System.out.println("CUMULATIVE RESULTS");
+		System.out.println("****************************");
+
+		int i = 0;
+		BufferedWriter fw = new BufferedWriter(new FileWriter("C:/Users/JohnnyTang/Dropbox/Clubs/Classics/scansion/output.html"));
+		fw.write("<html><table border=1>");
+		for (String result : results)
+		{
+			System.out.println(lines.get(i)+"||"+result);
+			fw.newLine();
+			fw.write("<tr><td>"+lines.get(i)+"</td><td>"+result+"</td></tr>");
+			i++;
+		}
+		fw.write("<b>Correctly Scanned: "+numScanned+"/"+numTotal+"</b>");
+		fw.close();
 	}
 }
